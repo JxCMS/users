@@ -1,40 +1,40 @@
 
-var mongoose = require('mongoose'),
+var Collection = require('../../../system/collection').Collection,
+    Model = require('../../../system/model').Model,
     encrypt = require('utils/lib/sha1').b64_hmac_sha1;
 
-mongoose.model('User', {
 
-    properties: ['first', 'last', 'username', 'email', 'password', 'logins', 'last_login', 'updated_at'],
-
-    indexes: ['email', 'username'],
-
-    setters: {
-        first: function(v){
-            return v.capitalize();
-        },
-        password: function(v){
-            //encrypt the password here....
-            return encrypt(core.getOption(secureKey),v);
+exports.model = new Class({
+    
+    Extends: Model,
+    
+    save: function(request){
+       if (!this.updated) {
+            this.updated = {};
         }
+        this.updated.at = Date.now();
+        if (!this.created) {
+            this.created = {};
+        }
+        this.created.at = Date.now();
+        this.password = this.encryptPassword(this.password);
+        return this.parent(request);
     },
-
-    getters: {
-        full_name: function(){
-            return this.first + ' ' + this.last
-        }
+    
+    fullName: function(){
+        return this.first + ' ' + this.last;
     },
-
-    methods: {
-        save: function(fn){
-            this.updated_at = new Date();
-            this.__super__(fn);
-        }
-    },
-
-    'static': {
-        encryptPassword: function(password){
-            return encrypt(core.getOption(secureKey),password);
-        }
+    
+    encryptPassword: function(password){
+        return encrypt(core.getOption(secureKey),password);
     }
+});
 
+exports.Collection = new Class({
+
+    Extends: Collection,
+    
+    model: exports.model,
+    
+    name: 'users'
 });
